@@ -10,14 +10,29 @@ import (
 func main() {
 	script := os.Args[1]
 	cmd := exec.Command(script, os.Args[2:]...)
-	out, _ := cmd.StdoutPipe()
-	scan := bufio.NewScanner(out)
+	stdout, _ := cmd.StdoutPipe()
+	stderr, _ := cmd.StderrPipe()
 	cmd.Start()
+	ch := make(chan string, 100)
+	stdoutScan := bufio.NewScanner(stdout)
+	stderrScan := bufio.NewScanner(stderr)
 	go func() {
-		for scan.Scan() {
-			line := scan.Text()
-			fmt.Println(line)
+		for stdoutScan.Scan() {
+			line := stdoutScan.Text()
+			ch <- line
 		}
 	}()
-	cmd.Wait()
+	go func() {
+		for stderrScan.Scan() {
+			line := stderrScan.Text()
+			ch <- line
+		}
+	}()
+	go func() {
+		cmd.Wait()
+		close(ch)
+	}()
+	for line := range ch {
+		fmt.Println(line)
+	}
 }
