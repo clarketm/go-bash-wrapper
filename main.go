@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 func main() {
 	script := os.Args[1]
-	args := strings.Join(os.Args[2:], " ")
-	cmd := exec.Command(script, args)
-	// cmd.SysProcAttr = &syscall.SysProcAttr{}
-	// cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
+	cmd := exec.Command(script, os.Args[2:]...)
 	out, _ := cmd.StdoutPipe()
 	scan := bufio.NewScanner(out)
 	cmd.Start()
